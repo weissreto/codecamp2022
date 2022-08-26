@@ -1,0 +1,4 @@
+TestData #class
+redisson.Test #namespace
+counter Long #field
+counter PERSISTENT #fieldModifier

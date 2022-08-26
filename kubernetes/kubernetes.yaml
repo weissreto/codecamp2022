@@ -1,0 +1,240 @@
+apiVersion: v1
+data:
+  ivy.yaml: |
+    SystemDb:
+      Url: jdbc:postgresql://ivy-sysdb:5432/AxonIvySystemDatabase
+      UserName: admin
+      Password: 1234
+      Autoconvert: false
+    Administrators:
+      admin:
+        Password: admin
+  license.lic: |
+    [Begin Licence]
+    #Licence for AxonIvy Axon Ivy Engine (Enterprise Edition)
+    #Wed Aug 17 11:27:19 UTC 2022
+    licence.keyversion=axonivy/9000
+    licence.number=XLSEE-182A-B8ED-07AQ
+    licence.type=Enterprise Edition
+    licence.valid.from=2022-08-17
+    licence.valid.until=2023-08-16
+    licencee.individual=www.axonivy.com
+    licencee.organisation=AXON IVY AG
+    product.name=Axon Ivy Engine
+    product.type=Server
+    public.urls=localhost
+    server.elements.limit=0
+    server.nodes.limit=5
+    server.sessions.limit=2
+    server.users.limit=4
+    [End Licence]
+    [Begin Signature]
+    MCwCFBmStp1wj2FlGQLQWqRIo5VCwi2zAhRogHrzzE4ppJOMTT+u5vZKwGiamQ==
+    [End Signature]
+  redisson.conf: "singleServerConfig:\n  address: \"redis://ivy-redis:6379\"\ncodec:
+    !<ch.ivyteam.ivy.webserver.internal.replication.IvyCodec> {}\n  "
+kind: ConfigMap
+metadata:
+  name: ivy-configmap-2f6gcfkm59
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ivy-engine
+  name: ivy-engine
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: ivy-engine
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ivy-redis
+  name: ivy-redis
+spec:
+  ports:
+  - name: http
+    port: 6379
+    targetPort: 6379
+  selector:
+    app: ivy-redis
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ivy-redis-insight
+  name: ivy-redis-insight
+spec:
+  ports:
+  - name: http
+    port: 8001
+    targetPort: 8001
+  selector:
+    app: ivy-redis-insight
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ivy-sysdb
+  name: ivy-sysdb
+spec:
+  ports:
+  - name: jdbc
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: ivy-sysdb
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ivy-engine
+  name: ivy-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ivy-engine
+  template:
+    metadata:
+      labels:
+        app: ivy-engine
+    spec:
+      containers:
+      - image: axonivy/axonivy-engine:redis
+        name: ivy-engine
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: 2G
+        volumeMounts:
+        - mountPath: /etc/axonivy-engine/redisson.conf
+          name: config
+          subPath: redisson.conf
+        - mountPath: /etc/axonivy-engine/ivy.yaml
+          name: config
+          subPath: ivy.yaml
+        - mountPath: /etc/axonivy-engine/license.lic
+          name: config
+          subPath: license.lic
+      volumes:
+      - configMap:
+          name: ivy-configmap-2f6gcfkm59
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ivy-redis
+  name: ivy-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivy-redis
+  template:
+    metadata:
+      labels:
+        app: ivy-redis
+    spec:
+      containers:
+      - image: redis:7
+        name: redis
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: 100M
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ivy-redis-insight
+  name: ivy-redis-insight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivy-redis-insight
+  template:
+    metadata:
+      labels:
+        app: ivy-redis-insight
+    spec:
+      containers:
+      - image: redislabs/redisinsight:latest
+        name: redis-insight
+        ports:
+        - containerPort: 8001
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: 100M
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ivy-sysdb
+  name: ivy-sysdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivy-sysdb
+  template:
+    metadata:
+      labels:
+        app: ivy-sysdb
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_USER
+          value: admin
+        - name: POSTGRES_PASSWORD
+          value: "1234"
+        image: postgres:latest
+        name: ivy-sysdb
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: 2G
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: ivy-engine
+spec:
+  rules:
+  - host: kubernetes.docker.internal
+    http:
+      paths:
+      - backend:
+          service:
+            name: ivy-engine
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix

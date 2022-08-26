@@ -1,0 +1,99 @@
+{
+  "format" : "9.4.19",
+  "id" : "182C5BE1892F1C82",
+  "data" : "redisson.Data",
+  "elements" : [ {
+      "id" : "f0",
+      "type" : "RequestStart",
+      "name" : "start.ivp",
+      "config" : {
+        "callSignature" : "start",
+        "outLink" : "start.ivp"
+      },
+      "visual" : {
+        "at" : { "x" : 96, "y" : 64 }
+      },
+      "connect" : { "id" : "f4", "to" : "f3" }
+    }, {
+      "id" : "f1",
+      "type" : "TaskEnd",
+      "visual" : {
+        "at" : { "x" : 352, "y" : 64 }
+      }
+    }, {
+      "id" : "f3",
+      "type" : "Script",
+      "config" : {
+        "output" : {
+          "code" : [
+            "import javax.servlet.http.HttpSession;",
+            "import ch.ivyteam.ivy.request.IHttpRequest;",
+            "",
+            "IHttpRequest request = ivy.request as IHttpRequest;",
+            "HttpSession session = request.getHttpSession();",
+            "String attr = session.getAttribute(\"ivy\") as String;",
+            "ivy.log.error(\"attr -> \" + attr);",
+            "attr += \"hi \";",
+            "session.setAttribute(\"ivy\", attr);"
+          ]
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 224, "y" : 64 }
+      },
+      "connect" : { "id" : "f2", "to" : "f1" }
+    }, {
+      "id" : "f5",
+      "type" : "RequestStart",
+      "name" : "start2.ivp",
+      "config" : {
+        "callSignature" : "start2",
+        "input" : {
+          "map" : {
+            "out.counter" : "5"
+          }
+        },
+        "outLink" : "start2.ivp"
+      },
+      "visual" : {
+        "at" : { "x" : 96, "y" : 208 }
+      },
+      "connect" : { "id" : "f7", "to" : "f6" }
+    }, {
+      "id" : "f6",
+      "type" : "DialogCall",
+      "name" : "Test",
+      "config" : {
+        "dialogId" : "redisson.Test",
+        "startMethod" : "start()",
+        "output" : {
+          "map" : {
+            "out" : "in",
+            "out.counter" : "in.counter + result.counter"
+          }
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 288, "y" : 208 }
+      },
+      "connect" : { "id" : "f11", "to" : "f10" }
+    }, {
+      "id" : "f8",
+      "type" : "TaskEnd",
+      "visual" : {
+        "at" : { "x" : 576, "y" : 208 }
+      }
+    }, {
+      "id" : "f10",
+      "type" : "Script",
+      "config" : {
+        "output" : {
+          "code" : "ivy.log.error(\"Counter: \"+in.counter);"
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 448, "y" : 208 }
+      },
+      "connect" : { "id" : "f9", "to" : "f8" }
+    } ]
+}

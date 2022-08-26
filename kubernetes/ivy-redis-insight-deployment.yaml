@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivy-redis-insight
+  labels:
+    app: ivy-redis-insight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivy-redis-insight
+  template:
+    metadata:
+      labels: 
+        app: ivy-redis-insight
+    spec:
+      containers:
+      - name: redis-insight
+        image: redislabs/redisinsight:latest
+        ports:
+        - containerPort: 8001
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: "100M"
+         

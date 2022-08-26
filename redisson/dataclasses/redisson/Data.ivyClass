@@ -1,0 +1,4 @@
+Data #class
+redisson #namespace
+counter Long #field
+counter PERSISTENT #fieldModifier

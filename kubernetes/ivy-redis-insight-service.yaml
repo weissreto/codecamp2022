@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivy-redis-insight
+  labels:
+    app: ivy-redis-insight
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+  selector:
+    app: ivy-redis-insight
